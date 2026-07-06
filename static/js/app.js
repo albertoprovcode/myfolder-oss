@@ -1,0 +1,106 @@
+import { get, post, esc } from "./api.js";
+import { confirmDialog, toast } from "./modal.js";
+const VIEWS = ["dashboard", "explorer", "search", "map", "recoverable", "owners"];
+const initialized = {};
+
+async function showView(name) {
+  if (!VIEWS.includes(name)) return;
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".navbtn").forEach(t => t.classList.remove("active"));
+  document.getElementById(`view-${name}`).classList.add("active");
+  document.querySelector(`.navbtn[data-view="${name}"]`).classList.add("active");
+  if (!initialized[name]) {
+    try {
+      const mod = await import(`./${name}.js`);
+      initialized[name] = true;
+      if (mod.init) await mod.init();
+    } catch (e) {
+      console.error(`Error en vista ${name}`, e);
+      document.getElementById(`view-${name}`).innerHTML = `<p class="error">No se pudo cargar la vista.</p>`;
+    }
+  }
+}
+
+document.querySelectorAll(".navbtn").forEach(b =>
+  b.addEventListener("click", () => showView(b.dataset.view)));
+
+document.getElementById("global-search").addEventListener("submit", async e => {
+  e.preventDefault();
+  const q = document.getElementById("q").value.trim();
+  if (!q) return;
+  await showView("search");
+  const mod = await import("./search.js");
+  if (mod.runFromQuery) mod.runFromQuery(q);
+});
+
+// Fecha de indexado / indicador de crawl en la topbar
+let _pollTimer = null;
+let _viewsIndexedAt = null; // indexed_at con el que se pintaron las vistas
+
+const POLL_CRAWLING_MS = 5000; // sondeo rápido mientras se indexa
+const POLL_IDLE_MS = 60000; // sondeo lento en reposo
+
+function _updateIndexedAt(s) {
+  const el = document.getElementById("indexed-at");
+  if (s.crawling) {
+    const n = new Intl.NumberFormat("es-ES").format(s.crawl_entries ?? s.files ?? 0);
+    const timePart = s.indexed_at ? s.indexed_at.split(" ")[1] || s.indexed_at : "";
+    el.textContent = timePart
+      ? `⏳ Indexando… ${n} entradas (desde ${timePart})`
+      : `⏳ Indexando… ${n} entradas`;
+    el.classList.add("crawling");
+  } else {
+    el.textContent = s.indexed_at ? `Indexado: ${esc(s.indexed_at)}` : "";
+    el.classList.remove("crawling");
+  }
+  // Refresco por CAMBIO de indexed_at, no por "ver" acabar el crawl: cubre
+  // también los indexados que esta pestaña no vio empezar (el programado de
+  // las 13h, el de arranque del contenedor, otra pestaña, botón con 409).
+  if (_viewsIndexedAt === null) {
+    // Primera carga: las vistas nacen con este índice ("" si aún no hay ninguno,
+    // para que el primer indexado que termine dispare el refresco).
+    _viewsIndexedAt = s.indexed_at ?? "";
+  } else if (!s.crawling && s.indexed_at && s.indexed_at !== _viewsIndexedAt) {
+    _viewsIndexedAt = s.indexed_at;
+    // Refrescar todas las vistas (la actual ya, el resto en su próxima visita).
+    const activeView = document.querySelector(".view.active");
+    Object.keys(initialized).forEach(k => delete initialized[k]);
+    if (activeView) showView(activeView.id.replace(/^view-/, ""));
+  }
+}
+
+async function _poll() {
+  clearTimeout(_pollTimer);
+  let crawling = false;
+  try {
+    const s = await get("/api/summary");
+    _updateIndexedAt(s);
+    crawling = !!s.crawling;
+  } catch (e) {
+    // Red caída o backend reiniciando: se reintenta en el próximo tick.
+  }
+  _pollTimer = setTimeout(_poll, crawling ? POLL_CRAWLING_MS : POLL_IDLE_MS);
+}
+
+_poll(); // pinta el pill y deja el sondeo permanente en marcha
+
+document.getElementById("btn-reindex").addEventListener("click", async () => {
+  const ok = await confirmDialog({
+    title: "Reindexar ahora",
+    message: "Se recorrerá todo el NAS para actualizar las cifras. Puede tardar unos minutos; mientras tanto podrás seguir usando la app con los datos actuales.",
+    okText: "Reindexar",
+    cancelText: "Cancelar",
+  });
+  if (!ok) return;
+  try {
+    await post("/api/reindex");
+    toast("Indexado iniciado.", "ok");
+  } catch (e) {
+    toast(e.status === 409 ? "Ya hay un indexado en curso." : "No se pudo lanzar el indexado.", "error");
+    if (e.status !== 409) return;
+    // Con 409 hay un crawl en marcha (lo lanzó otro): vigilarlo igualmente.
+  }
+  _poll(); // sondeo inmediato; la cadencia rápida se mantiene mientras dure el crawl
+});
+
+showView("dashboard");

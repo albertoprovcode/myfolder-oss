@@ -1,0 +1,5 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+httpx==0.28.1  # lo necesita el TestClient de starlette (tests); la app ya no lo usa
+pytest==8.3.4
+aiofiles==24.1.0

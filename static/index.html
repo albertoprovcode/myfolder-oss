@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>myfolder</title>
+  <link rel="icon" type="image/svg+xml" href="static/img/myfolder.svg">
+  <link rel="stylesheet" href="static/css/style.css?v=2026-07-02-7">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <h1 class="logo" style="display:flex;align-items:center;gap:.4rem"><img src="static/img/myfolder.svg" alt="" height="28"><span>myfolder</span></h1>
+      <nav class="topnav">
+        <button class="navbtn active" data-view="dashboard">📊<span>Resumen</span></button>
+        <button class="navbtn" data-view="explorer">🗂️<span>Explorador</span></button>
+        <button class="navbtn" data-view="search">🔎<span>Buscar</span></button>
+        <button class="navbtn" data-view="map">🗺️<span>Mapa</span></button>
+        <button class="navbtn" data-view="recoverable">♻️<span>Recuperable</span></button>
+        <button class="navbtn" data-view="owners">👤<span>Dueños</span></button>
+      </nav>
+      <form id="global-search" class="global-search">
+        <input id="q" type="search" placeholder="Buscar en todo el NAS…" autocomplete="off">
+      </form>
+      <span id="indexed-at" class="muted"></span>
+      <button id="btn-reindex" class="navbtn" title="Vuelve a recorrer el NAS y actualiza todas las cifras">⟳ Reindexar</button>
+    </header>
+
+    <main>
+      <section id="view-dashboard" class="view active"></section>
+      <section id="view-explorer" class="view"></section>
+      <section id="view-search" class="view"></section>
+      <section id="view-map" class="view"></section>
+      <section id="view-recoverable" class="view"></section>
+      <section id="view-owners" class="view"></section>
+    </main>
+  </div>
+
+  <script src="static/vendor/echarts.min.js"></script>
+  <script type="module" src="static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.env
+
+# Local runtime data (the SQLite index lives here)
+data/
+*.db
+
+# Your real compose file with real host paths — keep it out of the repo
+docker-compose.yml
+docker-compose.yaml

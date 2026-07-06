@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 36 560 468" width="560" height="468">
+  <defs>
+    <linearGradient id="mfBigBack" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5AA4F4"></stop><stop offset="1" stop-color="#3A86E4"></stop></linearGradient>
+    <linearGradient id="mfFront" x1="0" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#4694EE"></stop><stop offset="1" stop-color="#2B79DD"></stop></linearGradient>
+    <linearGradient id="mfSheet" x1="0" y1="0" x2="1" y2="0.6"><stop offset="0" stop-color="#EAF4FC"></stop><stop offset="1" stop-color="#C7E6E9"></stop></linearGradient>
+    <linearGradient id="mfNavy" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#36588C"></stop><stop offset="1" stop-color="#243F6B"></stop></linearGradient>
+    <linearGradient id="mfCyan" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#57B2F2"></stop><stop offset="1" stop-color="#3A97E6"></stop></linearGradient>
+    <linearGradient id="mfGreen" x1="0" y1="0" x2="1" y2="0.8"><stop offset="0" stop-color="#5AA6D6"></stop><stop offset="1" stop-color="#62BC5C"></stop></linearGradient>
+  </defs>
+  <path d="M 76 60 L 226 60 Q 242 60 242 76 L 242 104 Q 242 120 258 120 L 524 120 Q 554 120 554 150 L 554 450 Q 554 480 524 480 L 76 480 Q 46 480 46 450 L 46 90 Q 46 60 76 60 Z" fill="url(#mfBigBack)"></path>
+  <rect x="74" y="138" width="300" height="170" rx="24" fill="url(#mfSheet)"></rect>
+  <rect x="46" y="196" width="508" height="284" rx="30" fill="url(#mfFront)"></rect>
+  <rect x="332" y="214" width="11" height="250" rx="5" fill="#CFE6FB" opacity="0.85"></rect>
+  <path d="M 376 210 L 414 210 Q 430 210 430 226 L 430 214 Q 430 230 446 230 L 522 230 Q 538 230 538 246 L 538 298 Q 538 314 522 314 L 376 314 Q 360 314 360 298 L 360 226 Q 360 210 376 210 Z" fill="url(#mfNavy)"></path>
+  <path d="M 443 330 L 459 330 Q 472 330 472 343 L 472 332 Q 472 345 485 345 L 525 345 Q 538 345 538 358 L 538 387 Q 538 400 525 400 L 443 400 Q 430 400 430 387 L 430 343 Q 430 330 443 330 Z" fill="url(#mfCyan)"></path>
+  <path d="M 443 410 L 459 410 Q 472 410 472 423 L 472 411 Q 472 424 485 424 L 525 424 Q 538 424 538 437 L 538 463 Q 538 476 525 476 L 443 476 Q 430 476 430 463 L 430 423 Q 430 410 443 410 Z" fill="url(#mfGreen)"></path>
+</svg>

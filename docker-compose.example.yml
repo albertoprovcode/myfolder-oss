@@ -1,0 +1,35 @@
+# Example compose file for myfolder.
+#
+# Copy this to `docker-compose.yml` and adjust the volume paths to the
+# directories you want to index. The paths under `/data/<Name>` are what
+# the app shows; the host side (left of the colon) is wherever your data
+# actually lives. Every data mount is read-only (`:ro`) — myfolder never
+# writes to your files. The only writable volume is `./data`, where the
+# SQLite index is stored.
+
+services:
+  myfolder:
+    build: .
+    image: myfolder:latest
+    container_name: myfolder
+    environment:
+      - TZ=Europe/Madrid            # your timezone (used by the daily reindex)
+      - CLEANLIST_DAYS=365          # "recoverable" threshold: files not accessed in N days
+      - REINDEX_HOUR=13             # hour (0-23) of the daily automatic reindex
+      - REINDEX_MAX_AGE_H=24        # skip auto-reindex if the index is younger than this
+      # - AUTO_REINDEX=0            # uncomment to disable automatic reindexing (manual button still works)
+    volumes:
+      # --- Data to index (read-only). Add/remove to taste. ---
+      - /path/to/your/media:/data/Media:ro
+      - /path/to/your/documents:/data/Documents:ro
+      # - "/path/with spaces:/data/My Share:ro"
+
+      # --- SQLite index (writable, persists across container recreations) ---
+      - ./data:/config/data
+
+      # --- Optional: resolve numeric owner/group to real user names ---
+      # - /etc/passwd:/host/etc/passwd:ro
+      # - /etc/group:/host/etc/group:ro
+    ports:
+      - "8017:8000"
+    restart: unless-stopped
