@@ -1,3 +1,8 @@
+<img width="1905" height="1000" alt="Captura de pantalla 2026-07-07 115040" src="https://github.com/user-attachments/assets/ffa0be51-668d-469f-8fa2-5a28811b7841" />
+<img width="1912" height="931" alt="Captura de pantalla 2026-07-07 115020" src="https://github.com/user-attachments/assets/917752b6-d67e-4ec3-a481-bc57555639f1" />
+<img width="1903" height="989" alt="Captura de pantalla 2026-07-07 115004" src="https://github.com/user-attachments/assets/2ed2f3c5-f927-4946-adf5-a26256d9fadb" />
+<img width="1909" height="829" alt="Captura de pantalla 2026-07-07 114939" src="https://github.com/user-attachments/assets/acbf24f7-40e9-4487-8d22-05db60aed103" />
+<img width="1899" height="988" alt="Captura de pantalla 2026-07-07 114923" src="https://github.com/user-attachments/assets/879aa45e-1346-45ca-aac7-c4e80db20a7f" />
 # myfolder
 
 A self-hosted, **read-only** disk explorer for your NAS — built to do storage
