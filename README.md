@@ -1,8 +1,3 @@
-<img width="1905" height="1000" alt="Captura de pantalla 2026-07-07 115040" src="https://github.com/user-attachments/assets/ffa0be51-668d-469f-8fa2-5a28811b7841" />
-<img width="1912" height="931" alt="Captura de pantalla 2026-07-07 115020" src="https://github.com/user-attachments/assets/917752b6-d67e-4ec3-a481-bc57555639f1" />
-<img width="1903" height="989" alt="Captura de pantalla 2026-07-07 115004" src="https://github.com/user-attachments/assets/2ed2f3c5-f927-4946-adf5-a26256d9fadb" />
-<img width="1909" height="829" alt="Captura de pantalla 2026-07-07 114939" src="https://github.com/user-attachments/assets/acbf24f7-40e9-4487-8d22-05db60aed103" />
-<img width="1899" height="988" alt="Captura de pantalla 2026-07-07 114923" src="https://github.com/user-attachments/assets/879aa45e-1346-45ca-aac7-c4e80db20a7f" />
 # myfolder
 
 A self-hosted, **read-only** disk explorer for your NAS — built to do storage
@@ -19,6 +14,8 @@ index; every data mount is read-only.
 > The code, configuration, and this README are in English. Contributions adding
 > more languages are welcome — translations live in `static/js/locales/`.
 
+![myfolder — Summary dashboard: totals, disk space, age histogram, usage by type and top extensions, largest files and folders](https://github.com/user-attachments/assets/879aa45e-1346-45ca-aac7-c4e80db20a7f)
+
 ## What it does
 
 - **Summary** — total files, size, free space, and breakdowns by type, extension, and age.
@@ -29,6 +26,24 @@ index; every data mount is read-only.
 - **Recoverable** — cold data (not accessed in a configurable number of days), scoped to any subtree.
 - **Duplicate confirmation** — same-size files are grouped instantly; an on-demand, per-group SHA-256 check confirms whether they're truly identical (single background worker, cached separately so it survives reindexing).
 - **On-demand reindex** — a button in the UI, plus optional automatic reindexing on startup and on a daily schedule.
+
+## Screenshots
+
+**Explorer** — folder tree with rolled-up sizes, per-folder statistics, and a sortable, paginated table.
+
+![myfolder — Explorer view with folder tree, statistics charts and a sortable subfolder table](https://github.com/user-attachments/assets/acbf24f7-40e9-4487-8d22-05db60aed103)
+
+**Search** — filters and presets; in duplicate mode, same-size files are grouped and can be hash-verified on demand.
+
+![myfolder — Search view showing duplicate candidates grouped by size with per-file verify buttons](https://github.com/user-attachments/assets/2ed2f3c5-f927-4946-adf5-a26256d9fadb)
+
+**Map** — a drill-down treemap of where your space goes.
+
+![myfolder — Map view: treemap of top-level folders sized by disk usage](https://github.com/user-attachments/assets/917752b6-d67e-4ec3-a481-bc57555639f1)
+
+**Recoverable** — cold data (not accessed in a configurable number of days), scoped to any subtree.
+
+![myfolder — Recoverable view listing cold files by size, path and last-accessed date](https://github.com/user-attachments/assets/ffa0be51-668d-469f-8fa2-5a28811b7841)
 
 ## Architecture
 
