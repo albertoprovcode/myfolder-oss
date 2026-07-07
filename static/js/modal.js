@@ -1,4 +1,5 @@
 // Diálogos y avisos con el estilo de la app — sustituyen a confirm()/alert() nativos.
+import { t } from "./i18n.js";
 
 function _root() {
   let r = document.getElementById("modal-root");
@@ -12,8 +13,8 @@ function _root() {
 
 /** Diálogo de confirmación. Devuelve Promise<boolean>. */
 export function confirmDialog({
-  title = "¿Confirmar?", message = "",
-  okText = "Aceptar", cancelText = "Cancelar", danger = false,
+  title = t("common.confirm_q"), message = "",
+  okText = t("common.ok"), cancelText = t("common.cancel"), danger = false,
 } = {}) {
   return new Promise(resolve => {
     const back = document.createElement("div");
@@ -57,13 +58,13 @@ export function confirmDialog({
 
 /** Aviso efímero abajo-centrado. kind: "info" | "ok" | "error". */
 export function toast(message, kind = "info") {
-  const t = document.createElement("div");
-  t.className = `toast toast-${kind}`;
-  t.textContent = message;
-  _root().appendChild(t);
-  requestAnimationFrame(() => t.classList.add("open"));
+  const el = document.createElement("div");
+  el.className = `toast toast-${kind}`;
+  el.textContent = message;
+  _root().appendChild(el);
+  requestAnimationFrame(() => el.classList.add("open"));
   setTimeout(() => {
-    t.classList.remove("open");
-    setTimeout(() => t.remove(), 300);
+    el.classList.remove("open");
+    setTimeout(() => el.remove(), 300);
   }, 3500);
 }

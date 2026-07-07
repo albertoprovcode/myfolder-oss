@@ -39,7 +39,7 @@ def test_tree_component_servido(client):
     r = client.get("/static/js/tree.js")
     assert r.status_code == 200
     assert "export function mountTree" in r.text
-    assert "No se pudo cargar el árbol" in r.text
+    assert "explorer.tree_error" in r.text
 
 
 def test_recoverable_js_usa_el_componente_de_arbol(client):
@@ -54,7 +54,7 @@ def test_recoverable_js_usa_el_componente_de_arbol(client):
 def test_search_js_tiene_arbol_y_sin_campo_carpeta(client):
     r = client.get("/static/js/search.js")
     assert 'from "./tree.js"' in r.text
-    assert "Buscando en" in r.text
+    assert "search.scope" in r.text
     assert "f-path" not in r.text  # el campo "Carpeta (acotar a)" desaparece
 
 
@@ -79,6 +79,10 @@ def test_recoverable_y_explorer_usan_pager(client):
 
 def test_placeholders_de_carga(client):
     tree = client.get("/static/js/tree.js").text
-    assert "Cargando…" in tree
+    assert "common.loading" in tree
     search = client.get("/static/js/search.js").text
-    assert "Usa un preset o lanza una búsqueda." in search
+    assert "search.empty_hint" in search
+    # el texto en español sigue existiendo, ahora en el diccionario i18n
+    es = client.get("/static/js/locales/es.js").text
+    assert "Cargando…" in es
+    assert "Usa un preset o lanza una búsqueda." in es

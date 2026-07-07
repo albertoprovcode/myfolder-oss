@@ -17,6 +17,12 @@ input,select{background:var(--card);color:var(--fg);border:1px solid var(--line)
 .global-search input{width:100%}
 .navbtn{display:flex;align-items:center;gap:.4rem;background:none;border:0;color:var(--muted);padding:.4rem .7rem;border-radius:8px;font-size:.95rem}
 .navbtn.active{color:var(--fg);background:var(--card)}
+.lang-select{position:relative}
+.lang-btn{background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:.35rem .6rem;cursor:pointer;font:inherit}
+.lang-menu{position:absolute;inset-inline-end:0;inset-block-start:calc(100% + 4px);list-style:none;margin:0;padding:.25rem;background:var(--card);border:1px solid var(--line);border-radius:8px;min-width:140px;z-index:50}
+.lang-menu li{padding:.4rem .6rem;border-radius:6px;cursor:pointer;color:var(--fg)}
+.lang-menu li:hover{background:rgba(78,161,255,.06)}
+.lang-menu li.active{font-weight:600;color:var(--accent)}
 main{min-height:0;overflow:hidden;padding:1rem}
 .view{display:none;height:100%;min-height:0}
 .view.active{display:grid;gap:.8rem}
@@ -34,7 +40,7 @@ main{min-height:0;overflow:hidden;padding:1rem}
 .crumbs{display:flex;flex-wrap:wrap;gap:.3rem;font-size:.85rem}
 .crumbs a{color:var(--accent);cursor:pointer}
 table{width:100%;border-collapse:collapse}
-th,td{text-align:left;padding:.45rem;border-bottom:1px solid var(--line);font-size:.88rem}
+th,td{text-align:start;padding:.45rem;border-bottom:1px solid var(--line);font-size:.88rem}
 /* Cabeceras fijas al hacer scroll interno de la tabla */
 .scroll thead th{position:sticky;top:0;background:var(--card);z-index:2;box-shadow:inset 0 -1px 0 var(--line)}
 .error{color:#ff7a90}
@@ -62,8 +68,8 @@ th,td{text-align:left;padding:.45rem;border-bottom:1px solid var(--line);font-si
 .tree-caret{font-size:.85rem;color:var(--muted);cursor:pointer;flex-shrink:0;width:1.2rem;text-align:center;user-select:none}
 .tree-name{color:var(--accent);cursor:pointer;flex:1;min-width:6ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem}
 .tree-name:hover{text-decoration:underline}
-.tree-size{font-size:.75rem;flex-shrink:1;min-width:0;overflow:hidden;white-space:nowrap;width:96px;text-align:right}
-.tree-bar-wrap{width:44px;flex-shrink:0;margin-right:8px}
+.tree-size{font-size:.75rem;flex-shrink:1;min-width:0;overflow:hidden;white-space:nowrap;width:96px;text-align:end}
+.tree-bar-wrap{width:44px;flex-shrink:0;margin-inline-end:8px}
 .tree-bar{height:4px}
 
 /* Right detail pane */
@@ -141,8 +147,8 @@ tr.dup-g1 td{background:rgba(78,161,255,.08)}
 tr.dup-g0 td{background:rgba(255,178,89,.06)}
 .hash-cell{white-space:nowrap}
 .hash-val{font-family:ui-monospace,monospace;font-size:.82rem;color:var(--muted)}
-.dup-ok{color:var(--ok);font-weight:600;margin-right:.4rem}
-.dup-warn{color:var(--warn);font-weight:600;margin-right:.4rem}
+.dup-ok{color:var(--ok);font-weight:600;margin-inline-end:.4rem}
+.dup-warn{color:var(--warn);font-weight:600;margin-inline-end:.4rem}
 .size-input{display:flex;gap:.3rem}
 .size-input input{width:6rem;min-width:0}
 .size-input select{flex:none}
@@ -249,3 +255,24 @@ tr.dup-g0 td{background:rgba(255,178,89,.06)}
 .toast.open{opacity:1;transform:translate(-50%,0)}
 .toast-error{border-color:#7a2a2a;color:#ff9a9a}
 .toast-ok{border-color:#2a6a3a}
+
+/* --- RTL (árabe) ---
+   La mayor parte del mirroring (grids/flex sin índices explícitos, tablas,
+   text-align:start/end, .lang-menu con inset-inline-*) ya ocurre solo con
+   heredar `direction:rtl` del atributo dir="rtl" que pone i18n.js en <html>.
+   Aquí solo va lo que las propiedades lógicas NO cubren: glifos direccionales
+   fijos (texto) y paneles móviles posicionados con left/transform físicos. */
+
+/* ▸ apunta "hacia adelante" en la lectura (expandir); en RTL debe apuntar a
+   la izquierda. ▾ (expandido) es simétrico, no le afecta el mirror. */
+[dir="rtl"] .tree-caret{transform:scaleX(-1)}
+
+/* Cajones deslizables del árbol en móvil: usan left/transform físicos (no
+   hay equivalente lógico estable para transform), así que en RTL se abren
+   pegados al borde derecho en vez de al izquierdo. */
+@media(max-width:760px){
+  [dir="rtl"] .tree-drawer{left:auto;right:0;transform:translateX(100%)}
+  [dir="rtl"] .tree-drawer.open{transform:none}
+  [dir="rtl"] .rec-tree{left:auto;right:0}
+  [dir="rtl"] .s-tree{left:auto;right:0}
+}

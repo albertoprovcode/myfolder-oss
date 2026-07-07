@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 /**
  * Paginador con números clicables, compartido por Buscar/Recuperable/Explorador.
  *
@@ -35,7 +37,7 @@ export function renderPager(el, { page, totalPages, onPage, info } = {}) {
     return b;
   };
 
-  el.appendChild(btn("‹ Anterior", page - 1, { disabled: page === 0 }));
+  el.appendChild(btn(t("pager.prev"), page - 1, { disabled: page === 0 }));
   for (const p of _pageWindow(page, totalPages)) {
     if (p === "…") {
       const s = document.createElement("span");
@@ -47,7 +49,7 @@ export function renderPager(el, { page, totalPages, onPage, info } = {}) {
     }
   }
   addInfo();
-  el.appendChild(btn("Siguiente ›", page + 1, { disabled: page >= totalPages - 1 }));
+  el.appendChild(btn(t("pager.next"), page + 1, { disabled: page >= totalPages - 1 }));
 }
 
 /** Páginas a mostrar (0-based): primera, última y ventana alrededor de la

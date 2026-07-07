@@ -1,6 +1,7 @@
 import { get, esc } from "./api.js";
 import { mountTree } from "./tree.js";
 import { renderPager } from "./pager.js";
+import { fmtNum, t } from "./i18n.js";
 
 const PAGE_SIZE = 12;
 const ROOT = "/data";
@@ -16,7 +17,6 @@ let currentPath = ROOT;
 let tree = null;
 
 function rootEl() { return document.getElementById("view-recoverable"); }
-function fmt(n) { return new Intl.NumberFormat("es-ES").format(n); }
 
 function breadcrumbHtml(path) {
   const parts = path.replace(/^\/data\/?/, "").split("/").filter(Boolean);
@@ -62,9 +62,9 @@ async function load() {
 
   if (!summaryEl || !scrollEl || !pagerEl) return;
 
-  scrollEl.innerHTML = `<p class="muted">Cargando…</p>`;
+  scrollEl.innerHTML = `<p class="muted">${t("common.loading")}</p>`;
   pagerEl.innerHTML = "";
-  summaryEl.textContent = "Cargando…";
+  summaryEl.textContent = t("common.loading");
 
   try {
     const data = await get("/api/cold", {
@@ -81,29 +81,28 @@ async function load() {
     const { items, total, total_size_h } = data;
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-    summaryEl.innerHTML =
-      `Recuperable: <strong>${esc(fmt(total))}</strong> archivos · <strong>${esc(total_size_h)}</strong>`;
+    summaryEl.innerHTML = t("recoverable.summary", { n: esc(fmtNum(total)), size: esc(total_size_h) });
 
     if (!items.length) {
-      scrollEl.innerHTML = `<p class="muted">Sin archivos con estos criterios.</p>`;
-      pagerEl.innerHTML = `<span class="muted">0 resultados</span>`;
+      scrollEl.innerHTML = `<p class="muted">${t("recoverable.empty")}</p>`;
+      pagerEl.innerHTML = `<span class="muted">${t("explorer.zero_results")}</span>`;
       return;
     }
 
     const headHtml = `<thead><tr>
-      ${_thHtml("name", "Nombre")}
-      <th>Ruta</th>
-      ${_thHtml("size", "Tamaño")}
-      ${_thHtml("mtime", "Modificado")}
-      ${_thHtml("atime", "Accedido")}
+      ${_thHtml("name", t("common.name"))}
+      <th>${esc(t("common.path"))}</th>
+      ${_thHtml("size", t("common.size"))}
+      ${_thHtml("mtime", t("explorer.col_modified"))}
+      ${_thHtml("atime", t("explorer.col_accessed"))}
     </tr></thead>`;
 
     const bodyRows = items.map(it => `<tr>
-      <td data-label="Nombre">${esc(it.name || "—")}</td>
-      <td data-label="Ruta" class="rec-path">${esc(it.path || "—")}</td>
-      <td data-label="Tamaño">${esc(it.size_h || "—")}</td>
-      <td data-label="Modificado">${esc(it.mtime || "—")}</td>
-      <td data-label="Accedido">${esc(it.atime || "—")}</td>
+      <td data-label="${esc(t("common.name"))}">${esc(it.name || "—")}</td>
+      <td data-label="${esc(t("common.path"))}" class="rec-path">${esc(it.path || "—")}</td>
+      <td data-label="${esc(t("common.size"))}">${esc(it.size_h || "—")}</td>
+      <td data-label="${esc(t("explorer.col_modified"))}">${esc(it.mtime || "—")}</td>
+      <td data-label="${esc(t("explorer.col_accessed"))}">${esc(it.atime || "—")}</td>
     </tr>`).join("");
 
     scrollEl.innerHTML = `<table>${headHtml}<tbody>${bodyRows}</tbody></table>`;
@@ -127,12 +126,12 @@ async function load() {
     renderPager(pagerEl, {
       page, totalPages,
       onPage: p => { page = p; load(); },
-      info: `${fmt(total)} resultados · página ${page + 1} de ${totalPages}`,
+      info: t("common.pager_info", { n: fmtNum(total), page: page + 1, total: totalPages }),
     });
 
   } catch (e) {
     console.error(e);
-    scrollEl.innerHTML = `<p class="error">No se pudo cargar la vista Recuperable.</p>`;
+    scrollEl.innerHTML = `<p class="error">${t("recoverable.error")}</p>`;
     pagerEl.innerHTML = "";
     summaryEl.textContent = "";
   }
@@ -146,35 +145,35 @@ export async function init() {
   el.innerHTML = `
     <aside class="panel rec-tree">
       <div class="rec-tree-head">
-        <h2>Carpetas</h2>
-        <button id="rec-btn-tree-close" class="btn ghost rec-tree-close" title="Cerrar">✕</button>
+        <h2>${t("explorer.folders_heading")}</h2>
+        <button id="rec-btn-tree-close" class="btn ghost rec-tree-close" title="${esc(t("common.close"))}">✕</button>
       </div>
       <div class="scroll">
         <ul class="tree" id="rec-tree-root"></ul>
       </div>
     </aside>
-    <div class="tree-resizer" id="rec-resizer" title="Arrastra para redimensionar"></div>
+    <div class="tree-resizer" id="rec-resizer" title="${esc(t("explorer.resize_title"))}"></div>
     <div class="rec-main">
-      <button id="rec-btn-tree" class="btn ghost rec-btn-tree">☰ Carpetas</button>
+      <button id="rec-btn-tree" class="btn ghost rec-btn-tree">${t("search.folders_toggle")}</button>
       <div class="rec-crumbs"></div>
       <div class="rec-controls">
-        <label class="muted" for="rec-field">Campo:</label>
+        <label class="muted" for="rec-field">${t("recoverable.field_label")}</label>
         <select id="rec-field">
-          <option value="mtime" selected>Modificado</option>
-          <option value="atime">Accedido</option>
+          <option value="mtime" selected>${t("explorer.col_modified")}</option>
+          <option value="atime">${t("explorer.col_accessed")}</option>
         </select>
-        <label class="muted" for="rec-days">Antigüedad:</label>
+        <label class="muted" for="rec-days">${t("recoverable.age_label")}</label>
         <select id="rec-days">
-          <option value="90">&gt;90 días</option>
-          <option value="180">&gt;180 días</option>
-          <option value="365" selected>&gt;1 año</option>
-          <option value="730">&gt;2 años</option>
+          <option value="90">${t("recoverable.opt_90d")}</option>
+          <option value="180">${t("recoverable.opt_180d")}</option>
+          <option value="365" selected>${t("recoverable.opt_1y")}</option>
+          <option value="730">${t("recoverable.opt_2y")}</option>
         </select>
-        <label class="muted" for="rec-min">Tamaño mín.:</label>
+        <label class="muted" for="rec-min">${t("recoverable.min_size_label")}</label>
         <select id="rec-min">
-          <option value="0" selected>Cualquiera</option>
-          <option value="104857600">&gt;100 MB</option>
-          <option value="1073741824">&gt;1 GB</option>
+          <option value="0" selected>${t("search.group_any")}</option>
+          <option value="104857600">${t("recoverable.opt_100mb")}</option>
+          <option value="1073741824">${t("recoverable.opt_1gb")}</option>
         </select>
       </div>
       <p class="rec-summary"></p>
@@ -238,7 +237,9 @@ function setupResizer(el) {
   rez.addEventListener("pointermove", e => {
     if (!dragging) return;
     const rect = el.getBoundingClientRect();
-    const w = Math.max(200, Math.min(640, e.clientX - rect.left));
+    const rtl = document.documentElement.dir === "rtl";
+    const delta = rtl ? (rect.right - e.clientX) : (e.clientX - rect.left);
+    const w = Math.max(200, Math.min(640, delta));
     el.style.setProperty("--rec-tree-w", w + "px");
   });
   const end = e => {

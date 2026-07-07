@@ -6,6 +6,10 @@ const DARK = { backgroundColor: "transparent",
 // Etiquetas siempre en claro y sin borde (evita el texto oscuro con halo blanco por defecto de ECharts)
 const LABEL = { color: "#e7edf3", textBorderWidth: 0 };
 const AXIS = { axisLabel: { color: "#e7edf3" } };
+// RTL: el nombre (etiquetas de categoría, en árabe) va al lado por donde
+// empieza la lectura. No se toca la geometría de las barras (siguen
+// creciendo igual, es solo dónde se ancla el eje de categorías).
+const isRTL = () => document.documentElement.dir === "rtl";
 
 const _chartEls = new Set();
 let _resizeBound = false;
@@ -32,9 +36,10 @@ export function donut(el, items, { nameKey, valueKey }) {
 
 export function bars(el, items, { nameKey, valueKey }) {
   const chart = mount(el);
-  chart.setOption({ ...DARK, tooltip: {}, grid: { left: 90, right: 16, top: 10, bottom: 20 },
+  const rtl = isRTL();
+  chart.setOption({ ...DARK, tooltip: {}, grid: { left: rtl ? 16 : 90, right: rtl ? 90 : 16, top: 10, bottom: 20 },
     xAxis: { type: "value", ...AXIS },
-    yAxis: { type: "category", inverse: true, ...AXIS, data: items.map(i => i[nameKey]) },
+    yAxis: { type: "category", inverse: true, position: rtl ? "right" : "left", ...AXIS, data: items.map(i => i[nameKey]) },
     series: [{ type: "bar", data: items.map(i => i[valueKey]) }] });
   return chart;
 }

@@ -8,9 +8,11 @@ to browse, search, and find what's eating your space.
 It never modifies your files. The only thing it ever writes is its own SQLite
 index; every data mount is read-only.
 
-> The UI is in Spanish (it was built for the author's own use). The code,
-> configuration, and this README are in English. Contributions to internationalize
-> the UI are welcome.
+> The UI is available in **Spanish, English, Portuguese and Arabic** (with full
+> right-to-left layout for Arabic); switch languages from the 🌐 selector in the
+> header. The language is auto-detected from your browser, falling back to Spanish.
+> The code, configuration, and this README are in English. Contributions adding
+> more languages are welcome — translations live in `static/js/locales/`.
 
 ## What it does
 

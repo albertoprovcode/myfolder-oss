@@ -1,6 +1,7 @@
 import { get, post, esc } from "./api.js";
 import { mountTree } from "./tree.js";
 import { renderPager } from "./pager.js";
+import { t, fmtNum } from "./i18n.js";
 const root = () => document.getElementById("view-search");
 
 const UNIT_BYTES = { KB: 1024, MB: 1024 ** 2, GB: 1024 ** 3 };
@@ -20,8 +21,6 @@ let tree = null;
 
 const GROUPS_PER_PAGE = 15; // modo duplicados: grupos de tamaño por página
 const ROWS_PER_PAGE = 50; // búsqueda normal: filas por página
-
-const _fmtN = n => new Intl.NumberFormat("es-ES").format(n ?? 0);
 
 function _thHtml(key, label, sortable = true) {
   if (!sortable) return `<th>${esc(label)}</th>`;
@@ -45,25 +44,25 @@ function rowsFiles(items, group = false) {
     }
     const cls = group ? ` class="dup-g${gi % 2}"` : "";
     const hashCell = group
-      ? `<td data-label="Hash" class="hash-cell" data-hash-path="${esc(i.path + "/" + i.name)}">${first ? _verifyBtnHtml(gi) : ""}</td>`
+      ? `<td data-label="${esc(t("search.col_hash"))}" class="hash-cell" data-hash-path="${esc(i.path + "/" + i.name)}">${first ? _verifyBtnHtml(gi) : ""}</td>`
       : "";
-    return `<tr${cls}><td data-label="Nombre">${esc(i.name)}<div class="muted path-sub">${esc(i.path)}</div></td>
-     <td data-label="Tamaño">${esc(i.size_h)}</td>
-     <td data-label="Modificado">${esc(i.mtime)}</td>
-     <td data-label="Accedido">${esc(i.atime)}</td>${hashCell}</tr>`;
+    return `<tr${cls}><td data-label="${esc(t("common.name"))}">${esc(i.name)}<div class="muted path-sub">${esc(i.path)}</div></td>
+     <td data-label="${esc(t("common.size"))}">${esc(i.size_h)}</td>
+     <td data-label="${esc(t("explorer.col_modified"))}">${esc(i.mtime)}</td>
+     <td data-label="${esc(t("explorer.col_accessed"))}">${esc(i.atime)}</td>${hashCell}</tr>`;
   }).join("");
   return rows;
 }
 
 function _verifyBtnHtml(gi) {
-  return `<button type="button" class="btn ghost btn-verify" data-group="${gi}">Verificar</button>`;
+  return `<button type="button" class="btn ghost btn-verify" data-group="${gi}">${esc(t("search.verify"))}</button>`;
 }
 
 /** Estimación de lectura a ~150 MB/s, solo para grupos de más de 2 GB. */
 function _estimacion(totalBytes) {
   if (totalBytes <= 2 * 1024 ** 3) return "";
   const min = Math.max(1, Math.round(totalBytes / (150 * 1024 ** 2) / 60));
-  return ` (~${min} min)`;
+  return t("search.estimacion_min", { min });
 }
 
 async function runSearch(params, keepPage = false) {
@@ -72,7 +71,7 @@ async function runSearch(params, keepPage = false) {
   lastParams = { ...params };
   if (!keepPage) page = 0;
   const out = root().querySelector("#s-results");
-  out.innerHTML = `<p class="muted">Buscando…</p>`;
+  out.innerHTML = `<p class="muted">${t("search.searching")}</p>`;
   const group = !!params.dupes_only;
   try {
     // Modo duplicados: paginación por GRUPOS de tamaño (el backend trae todas
@@ -86,23 +85,23 @@ async function runSearch(params, keepPage = false) {
     if (currentPath !== ROOT) query.path = currentPath;
     const r = await get("/api/search", query);
     if (!r.items.length) {
-      out.innerHTML = `<p class="muted">Sin resultados.</p>`;
+      out.innerHTML = `<p class="muted">${t("search.no_results")}</p>`;
       return;
     }
     const headHtml = `<thead><tr>
-      ${_thHtml("name", "Nombre", !group)}
-      ${_thHtml("size", "Tamaño")}
-      ${_thHtml("mtime", "Modificado", !group)}
-      ${_thHtml("atime", "Accedido", !group)}
-      ${group ? "<th>Hash</th>" : ""}
+      ${_thHtml("name", t("common.name"), !group)}
+      ${_thHtml("size", t("common.size"))}
+      ${_thHtml("mtime", t("explorer.col_modified"), !group)}
+      ${_thHtml("atime", t("explorer.col_accessed"), !group)}
+      ${group ? `<th>${esc(t("search.col_hash"))}</th>` : ""}
     </tr></thead>`;
     const totalPages = group
       ? Math.max(1, Math.ceil((r.total_groups ?? 0) / GROUPS_PER_PAGE))
       : Math.max(1, Math.ceil(r.total / ROWS_PER_PAGE));
-    const pageInfo = totalPages > 1 ? ` · página ${page + 1} de ${_fmtN(totalPages)}` : "";
+    const pageInfo = totalPages > 1 ? t("search.page_of", { page: page + 1, total: fmtNum(totalPages) }) : "";
     const note = group
-      ? `<p class="muted">${_fmtN(r.total)} archivos en ${_fmtN(r.total_groups)} grupos${pageInfo} · cada bloque de color = archivos del mismo tamaño (posibles duplicados; mismo tamaño ≠ idéntico)</p>`
-      : `<p class="muted">${_fmtN(r.total)} resultados${pageInfo}</p>`;
+      ? `<p class="muted">${t("search.dupes_results", { n: fmtNum(r.total), groups: fmtNum(r.total_groups) })}${pageInfo}${t("search.dupes_note")}</p>`
+      : `<p class="muted">${t("search.n_results", { n: fmtNum(r.total) })}${pageInfo}</p>`;
     out.innerHTML = `${note}
        <div class="scroll"><table>${headHtml}<tbody>${rowsFiles(r.items, group)}</tbody></table></div>
        <div class="pager" id="s-pager"></div>`;
@@ -119,7 +118,7 @@ async function runSearch(params, keepPage = false) {
       onPage: p => { page = p; runSearch(lastParams, true); },
     });
     if (group) _initHashUI(out, token);
-  } catch (e) { console.error(e); out.innerHTML = `<p class="error">Error en la búsqueda.</p>`; }
+  } catch (e) { console.error(e); out.innerHTML = `<p class="error">${t("search.error")}</p>`; }
 }
 
 function _readForm() {
@@ -190,11 +189,11 @@ function _runPreset(fill) {
 }
 
 const PRESETS = [
-  { label: "Enormes (>25 GB)", fill: el => { el.querySelector("#f-size-min").value = "25"; el.querySelector("#f-size-min-unit").value = "GB"; } },
-  { label: "Vídeos", fill: el => { el.querySelector("#f-category").value = "video"; } },
-  { label: "No accedidos en 2 años", fill: el => { el.querySelector("#f-atime-to").value = _dateYearsAgo(2); } },
-  { label: "Vacíos", fill: el => { el.querySelector("#f-size-max").value = "0"; el.querySelector("#f-size-max-unit").value = "KB"; } },
-  { label: "Duplicados grandes (>100 MB)", fill: el => { el.querySelector("#f-size-min").value = "100"; el.querySelector("#f-size-min-unit").value = "MB"; el.querySelector("#f-dupes-only").checked = true; } },
+  { label: "search.preset_huge", fill: el => { el.querySelector("#f-size-min").value = "25"; el.querySelector("#f-size-min-unit").value = "GB"; } },
+  { label: "search.preset_videos", fill: el => { el.querySelector("#f-category").value = "video"; } },
+  { label: "search.preset_notaccessed2y", fill: el => { el.querySelector("#f-atime-to").value = _dateYearsAgo(2); } },
+  { label: "search.preset_empty", fill: el => { el.querySelector("#f-size-max").value = "0"; el.querySelector("#f-size-max-unit").value = "KB"; } },
+  { label: "search.preset_dupes_large", fill: el => { el.querySelector("#f-size-min").value = "100"; el.querySelector("#f-size-min-unit").value = "MB"; el.querySelector("#f-dupes-only").checked = true; } },
 ];
 
 export function runFromQuery(q) {
@@ -238,55 +237,55 @@ export async function init() {
   el.innerHTML =
     `<aside class="panel s-tree">
        <div class="s-tree-head">
-         <h2>Carpetas</h2>
-         <button id="s-btn-tree-close" class="btn ghost s-tree-close" title="Cerrar">✕</button>
+         <h2>${esc(t("explorer.folders_heading"))}</h2>
+         <button id="s-btn-tree-close" class="btn ghost s-tree-close" title="${esc(t("common.close"))}">✕</button>
        </div>
        <div class="scroll">
          <ul class="tree" id="s-tree-root"></ul>
        </div>
      </aside>
-     <div class="tree-resizer" id="s-resizer" title="Arrastra para redimensionar"></div>
+     <div class="tree-resizer" id="s-resizer" title="${esc(t("explorer.resize_title"))}"></div>
      <div class="s-main">
-       <div class="panel"><h2>Buscar</h2>
-       <button id="s-btn-tree" class="btn ghost s-btn-tree">☰ Carpetas</button>
+       <div class="panel"><h2>${esc(t("nav.search"))}</h2>
+       <button id="s-btn-tree" class="btn ghost s-btn-tree">${esc(t("search.folders_toggle"))}</button>
        <div class="filters">
-         ${PRESETS.map((p, idx) => `<button type="button" class="btn ghost" data-preset="${idx}">${esc(p.label)}</button>`).join("")}
+         ${PRESETS.map((p, idx) => `<button type="button" class="btn ghost" data-preset="${idx}">${esc(t(p.label))}</button>`).join("")}
          <form id="s-form" class="filters-form">
-           <input id="s-name" placeholder="Nombre contiene…">
-           <input id="s-ext" placeholder="Extensión (p.ej. mp4)">
-           <button class="btn" type="submit">Buscar</button>
-           <button class="btn ghost" type="button" id="s-toggle-adv">Filtros</button>
+           <input id="s-name" placeholder="${esc(t("search.name_ph"))}">
+           <input id="s-ext" placeholder="${esc(t("search.ext_ph"))}">
+           <button class="btn" type="submit">${esc(t("search.do_search"))}</button>
+           <button class="btn ghost" type="button" id="s-toggle-adv">${esc(t("search.filters"))}</button>
          </form>
        </div>
        <div id="s-adv" class="filters-adv">
-         <label>Tamaño mín
+         <label>${esc(t("search.size_min"))}
            <span class="size-input"><input id="f-size-min" type="number" min="0" placeholder="0">
            <select id="f-size-min-unit"><option>KB</option><option selected>MB</option><option>GB</option></select></span>
          </label>
-         <label>Tamaño máx
-           <span class="size-input"><input id="f-size-max" type="number" min="0" placeholder="sin límite">
+         <label>${esc(t("search.size_max"))}
+           <span class="size-input"><input id="f-size-max" type="number" min="0" placeholder="${esc(t("search.no_limit"))}">
            <select id="f-size-max-unit"><option>KB</option><option selected>MB</option><option>GB</option></select></span>
          </label>
-         <label>Categoría<select id="f-category">
-           <option value="">Todas</option>
-           <option value="video">Vídeo</option>
-           <option value="image">Imagen</option>
-           <option value="audio">Audio</option>
-           <option value="document">Documento</option>
-           <option value="archive">Archivo (comprimido)</option>
-           <option value="code">Código</option>
-           <option value="other">Otros</option>
+         <label>${esc(t("search.category"))}<select id="f-category">
+           <option value="">${esc(t("search.cat_all"))}</option>
+           <option value="video">${esc(t("cat.video"))}</option>
+           <option value="image">${esc(t("cat.image"))}</option>
+           <option value="audio">${esc(t("cat.audio"))}</option>
+           <option value="document">${esc(t("cat.document"))}</option>
+           <option value="archive">${esc(t("cat.archive"))}</option>
+           <option value="code">${esc(t("cat.code"))}</option>
+           <option value="other">${esc(t("cat.other"))}</option>
          </select></label>
-         <label>Tipo<select id="f-type"><option value="">Todos</option><option value="file">Archivos</option><option value="directory">Carpetas</option></select></label>
-         <label>Modificado desde<input id="f-mtime-from" type="date"></label>
-         <label>Modificado hasta<input id="f-mtime-to" type="date"></label>
-         <label>Accedido desde<input id="f-atime-from" type="date"></label>
-         <label>Accedido hasta<input id="f-atime-to" type="date"></label>
-         <label>Grupo<select id="f-group"><option value="">Cualquiera</option></select></label>
-         <label class="chk-inline"><input id="f-dupes-only" type="checkbox"> Solo posibles duplicados (mismo tamaño)</label>
+         <label>${esc(t("search.type"))}<select id="f-type"><option value="">${esc(t("search.type_all"))}</option><option value="file">${esc(t("search.type_files"))}</option><option value="directory">${esc(t("search.type_dirs"))}</option></select></label>
+         <label>${esc(t("search.mtime_from"))}<input id="f-mtime-from" type="date"></label>
+         <label>${esc(t("search.mtime_to"))}<input id="f-mtime-to" type="date"></label>
+         <label>${esc(t("search.atime_from"))}<input id="f-atime-from" type="date"></label>
+         <label>${esc(t("search.atime_to"))}<input id="f-atime-to" type="date"></label>
+         <label>${esc(t("search.group"))}<select id="f-group"><option value="">${esc(t("search.group_any"))}</option></select></label>
+         <label class="chk-inline"><input id="f-dupes-only" type="checkbox"> ${esc(t("search.dupes_only"))}</label>
        </div>
        <p id="s-scope" class="muted"></p>
-       <div id="s-results"><p class="muted">Usa un preset o lanza una búsqueda.</p></div></div>
+       <div id="s-results"><p class="muted">${esc(t("search.empty_hint"))}</p></div></div>
      </div>`;
 
   el.querySelector("#s-toggle-adv").addEventListener("click", toggleFilters);
@@ -326,13 +325,13 @@ function _initHashUI(out, token) {
     if (btn) {
       const nota = document.createElement("span");
       nota.className = "muted";
-      nota.textContent = "resto del grupo fuera de esta carpeta";
+      nota.textContent = t("search.rest_outside");
       btn.replaceWith(nota);
     }
   });
   out.querySelectorAll(".btn-verify").forEach(btn => {
     const g = dupeGroups[Number(btn.dataset.group)];
-    btn.textContent = "Verificar" + _estimacion(g.total);
+    btn.textContent = t("search.verify") + _estimacion(g.total);
     btn.addEventListener("click", () => _verifyGroup(out, Number(btn.dataset.group), token));
   });
   // Grupos ya verificados (caché): una sola consulta con todas las rutas de la página
@@ -343,13 +342,13 @@ function _initHashUI(out, token) {
 async function _verifyGroup(out, gi, token) {
   const g = dupeGroups[gi];
   const btn = out.querySelector(`.btn-verify[data-group="${gi}"]`);
-  if (btn) { btn.disabled = true; btn.textContent = "Calculando…"; }
-  g.paths.slice(1).forEach(p => _setCell(out, p, `<span class="muted">calculando…</span>`));
+  if (btn) { btn.disabled = true; btn.textContent = t("search.calculating"); }
+  g.paths.slice(1).forEach(p => _setCell(out, p, `<span class="muted">${t("search.calculating_lc")}</span>`));
   try {
     await post("/api/hash", { paths: g.paths });
   } catch (e) {
     console.error(e);
-    if (btn) { btn.disabled = false; btn.textContent = "Verificar" + _estimacion(g.total); }
+    if (btn) { btn.disabled = false; btn.textContent = t("search.verify") + _estimacion(g.total); }
     return;
   }
   _pollStatus(out, g.paths, token);
@@ -375,10 +374,10 @@ async function _pollStatus(out, paths, token, { once = false } = {}) {
       // muestra "Calculando…" en vez de un "Verificar" desfasado.
       const cell = out.querySelector(`.hash-cell[data-hash-path="${CSS.escape(p)}"]`);
       const btn = cell?.querySelector(".btn-verify");
-      if (btn) { btn.disabled = true; btn.textContent = "Calculando…"; }
-      else _setCell(out, p, `<span class="muted">calculando…</span>`);
+      if (btn) { btn.disabled = true; btn.textContent = t("search.calculating"); }
+      else _setCell(out, p, `<span class="muted">${t("search.calculating_lc")}</span>`);
     }
-    else if (s.status === "error") _setCell(out, p, `<span class="dup-warn">error: ${esc(s.error)}</span>`);
+    else if (s.status === "error") _setCell(out, p, `<span class="dup-warn">${esc(t("search.err_label"))} ${esc(s.error)}</span>`);
     // unknown: se deja como esté (botón Verificar)
   }
   _updateVerdicts(out, res);
@@ -404,10 +403,10 @@ function _updateVerdicts(out, res) {
     if (!estados.every(s => s.status === "done" || s.status === "error")) return;
     if (estados.every(s => s.status === "done")) {
       const hashes = new Set(estados.map(s => s.sha256));
-      if (hashes.size === 1) _setBadge(out, gi, "dup-ok", "✓ Idénticos");
-      else _setBadge(out, gi, "dup-warn", "⚠ Hay diferencias");
+      if (hashes.size === 1) _setBadge(out, gi, "dup-ok", t("search.identical"));
+      else _setBadge(out, gi, "dup-warn", t("search.differences"));
     } else {
-      _setBadge(out, gi, "dup-warn", "⚠ incompleto");
+      _setBadge(out, gi, "dup-warn", t("search.incomplete"));
     }
   });
 }
@@ -437,7 +436,7 @@ function _onTreeSelect(path) {
 function _updateScopeLabel() {
   const elScope = root().querySelector("#s-scope");
   if (!elScope) return;
-  elScope.textContent = currentPath !== ROOT ? `Buscando en: ${currentPath}` : "";
+  elScope.textContent = currentPath !== ROOT ? t("search.scope", { path: currentPath }) : "";
 }
 
 // Divisor arrastrable del árbol (persistido), calcado del de Recuperable
@@ -457,7 +456,9 @@ function _setupTreeResizer(el) {
   rez.addEventListener("pointermove", e => {
     if (!dragging) return;
     const rect = el.getBoundingClientRect();
-    const w = Math.max(200, Math.min(640, e.clientX - rect.left));
+    const rtl = document.documentElement.dir === "rtl";
+    const delta = rtl ? (rect.right - e.clientX) : (e.clientX - rect.left);
+    const w = Math.max(200, Math.min(640, delta));
     el.style.setProperty("--search-tree-w", w + "px");
   });
   const end = () => {

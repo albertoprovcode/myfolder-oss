@@ -1,9 +1,19 @@
 import { get, esc } from "./api.js";
 import { donut, bars, stacked } from "./charts.js";
 import { renderPager } from "./pager.js";
+import { t, fmtNum } from "./i18n.js";
 
 const ROOT = "/data";
 const PAGE_SIZE = 12;
+
+// Mapa de etiquetas de antigüedad del backend (español) → clave i18n (igual que dashboard.js).
+const AGE_KEY = {
+  "0-30d": "age.0_30d",
+  "30-90d": "age.30_90d",
+  "90d-1a": "age.90d_1y",
+  "1-2a": "age.1_2y",
+  ">2a": "age.gt2y",
+};
 
 // ── Module state ──────────────────────────────────────────────────────────────
 let currentPath = ROOT;
@@ -21,8 +31,6 @@ const treeCache = new Map();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function rootEl() { return document.getElementById("view-explorer"); }
-
-function fmt(n) { return new Intl.NumberFormat("es-ES").format(n); }
 
 /** Build breadcrumb HTML for a path */
 function crumbsHtml(path) {
@@ -62,7 +70,7 @@ function buildChildrenHtml(children, parentMax) {
     const pct = Math.round((ch.size / denom) * 100);
     return `<li class="tree-node" data-path="${esc(ch.path)}">
       <div class="tree-row">
-        <span class="tree-caret" title="Expandir">▸</span>
+        <span class="tree-caret" title="${esc(t("explorer.expand"))}">▸</span>
         <span class="tree-name" data-path="${esc(ch.path)}">${esc(ch.name)}</span>
         <span class="tree-size muted">${esc(ch.size_h)} · ${esc(pct)}%</span>
         <div class="tree-bar-wrap"><div class="bar tree-bar" style="width:${esc(barW)}%"></div></div>
@@ -160,7 +168,7 @@ async function ensureVisibleInTree(path) {
 async function renderChart(path, option) {
   const chartArea = rootEl().querySelector("#ex-chart-area");
   if (!chartArea) return;
-  chartArea.innerHTML = `<p class="muted">Cargando…</p>`;
+  chartArea.innerHTML = `<p class="muted">${t("common.loading")}</p>`;
   try {
     if (option === "types") {
       const [bySize, byCount] = await Promise.all([
@@ -170,11 +178,11 @@ async function renderChart(path, option) {
       chartArea.innerHTML =
         `<div class="chart-duo">
           <div class="chart-col">
-            <p class="chart-label muted">Por tamaño</p>
+            <p class="chart-label muted">${t("explorer.by_size")}</p>
             <div class="chart" id="ex-chart-a"></div>
           </div>
           <div class="chart-col">
-            <p class="chart-label muted">Por conteo</p>
+            <p class="chart-label muted">${t("explorer.by_count")}</p>
             <div class="chart" id="ex-chart-b"></div>
           </div>
         </div>`;
@@ -186,11 +194,11 @@ async function renderChart(path, option) {
       chartArea.innerHTML =
         `<div class="chart-duo">
           <div class="chart-col">
-            <p class="chart-label muted">Por tamaño</p>
+            <p class="chart-label muted">${t("explorer.by_size")}</p>
             <div class="chart" id="ex-chart-a"></div>
           </div>
           <div class="chart-col">
-            <p class="chart-label muted">Por conteo</p>
+            <p class="chart-label muted">${t("explorer.by_count")}</p>
             <div class="chart" id="ex-chart-b"></div>
           </div>
         </div>`;
@@ -200,16 +208,18 @@ async function renderChart(path, option) {
     } else if (option === "agem") {
       const { buckets } = await get("/api/age", { path, field: "mtime" });
       chartArea.innerHTML = `<div class="chart" id="ex-chart-a"></div>`;
-      stacked(chartArea.querySelector("#ex-chart-a"), buckets);
+      const localized = buckets.map(b => ({ ...b, label: t(AGE_KEY[b.label] || "age.unknown") }));
+      stacked(chartArea.querySelector("#ex-chart-a"), localized);
 
     } else if (option === "agea") {
       const { buckets } = await get("/api/age", { path, field: "atime" });
       chartArea.innerHTML = `<div class="chart" id="ex-chart-a"></div>`;
-      stacked(chartArea.querySelector("#ex-chart-a"), buckets);
+      const localized = buckets.map(b => ({ ...b, label: t(AGE_KEY[b.label] || "age.unknown") }));
+      stacked(chartArea.querySelector("#ex-chart-a"), localized);
     }
   } catch (e) {
     console.error(e);
-    chartArea.innerHTML = `<p class="error">No se pudo cargar el gráfico.</p>`;
+    chartArea.innerHTML = `<p class="error">${t("explorer.chart_error")}</p>`;
   }
 }
 
@@ -225,24 +235,24 @@ const _SORT_DEFAULTS = {
 };
 
 const _COL_LABELS = [
-  { key: "name",   label: "Nombre",    sortable: true },
-  { key: "_bar",   label: "Barra",     sortable: false },
-  { key: "_pct",   label: "%",         sortable: false },
-  { key: "size",   label: "Tamaño",    sortable: true },
-  { key: "mtime",  label: "Modificado",sortable: true },
-  { key: "atime",  label: "Accedido",  sortable: true },
-  { key: "files",  label: "Archivos",  sortable: true },
-  { key: "dirs",   label: "Carpetas",  sortable: true },
-  { key: "owner",  label: "Owner",     sortable: false },
-  { key: "group",  label: "Grupo",     sortable: false },
-  { key: "_type",  label: "Tipo",      sortable: false },
+  { key: "name",   label: "common.name",           sortable: true },
+  { key: "_bar",   label: "explorer.col_bar",      sortable: false },
+  { key: "_pct",   label: "explorer.col_pct",      sortable: false },
+  { key: "size",   label: "common.size",           sortable: true },
+  { key: "mtime",  label: "explorer.col_modified", sortable: true },
+  { key: "atime",  label: "explorer.col_accessed", sortable: true },
+  { key: "files",  label: "explorer.col_files",    sortable: true },
+  { key: "dirs",   label: "explorer.col_folders",  sortable: true },
+  { key: "owner",  label: "explorer.col_owner",    sortable: false },
+  { key: "group",  label: "explorer.col_group",    sortable: false },
+  { key: "_type",  label: "explorer.col_type",     sortable: false },
 ];
 
 function _thHtml(col) {
-  if (!col.sortable) return `<th>${esc(col.label)}</th>`;
+  if (!col.sortable) return `<th>${esc(t(col.label))}</th>`;
   const active = tblSort === col.key;
   const indicator = active ? (tblOrder === "asc" ? " ▲" : " ▼") : "";
-  return `<th class="th-sort${active ? " th-sort-active" : ""}" data-sort="${esc(col.key)}">${esc(col.label)}${indicator}</th>`;
+  return `<th class="th-sort${active ? " th-sort-active" : ""}" data-sort="${esc(col.key)}">${esc(t(col.label))}${indicator}</th>`;
 }
 
 async function loadChildrenTable(path) {
@@ -252,7 +262,7 @@ async function loadChildrenTable(path) {
   // Ensure we have a scroll container and a pager container
   let scrollEl = panel.querySelector(".scroll");
   if (!scrollEl) return;
-  scrollEl.innerHTML = `<p class="muted">Cargando…</p>`;
+  scrollEl.innerHTML = `<p class="muted">${t("common.loading")}</p>`;
 
   let pagerEl = panel.querySelector(".pager");
   if (!pagerEl) {
@@ -275,8 +285,8 @@ async function loadChildrenTable(path) {
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     if (!items.length) {
-      scrollEl.innerHTML = `<p class="muted">Sin elementos.</p>`;
-      pagerEl.innerHTML = `<span class="muted">0 resultados</span>`;
+      scrollEl.innerHTML = `<p class="muted">${t("explorer.no_items")}</p>`;
+      pagerEl.innerHTML = `<span class="muted">${t("explorer.zero_results")}</span>`;
       return;
     }
 
@@ -291,19 +301,19 @@ async function loadChildrenTable(path) {
       const nameCell = it.type === "directory"
         ? `<a class="row-dir-link" data-path="${esc(it.path)}">${esc(it.name)}</a>`
         : esc(it.name);
-      const typeLabel = it.type === "directory" ? "Carpeta" : "Archivo";
+      const typeLabel = t(it.type === "directory" ? "common.folder" : "common.file");
       return `<tr class="${it.type === "directory" ? "row-dir" : ""}">
-        <td data-label="Nombre">${nameCell}</td>
-        <td data-label="Barra" class="bar-cell"><div class="bar" style="width:${esc(String(barW))}%;max-width:100px"></div></td>
-        <td data-label="%">${esc(pct)}</td>
-        <td data-label="Tamaño">${esc(it.size_h)}</td>
-        <td data-label="Modificado">${esc(it.mtime || "—")}</td>
-        <td data-label="Accedido">${esc(it.atime || "—")}</td>
-        <td data-label="Archivos">${esc(fmt(it.files))}</td>
-        <td data-label="Carpetas">${esc(fmt(it.dirs))}</td>
-        <td data-label="Owner">${esc(it.owner || "—")}</td>
-        <td data-label="Grupo">${esc(it.group || "—")}</td>
-        <td data-label="Tipo">${esc(typeLabel)}</td>
+        <td data-label="${esc(t("common.name"))}">${nameCell}</td>
+        <td data-label="${esc(t("explorer.col_bar"))}" class="bar-cell"><div class="bar" style="width:${esc(String(barW))}%;max-width:100px"></div></td>
+        <td data-label="${esc(t("explorer.col_pct"))}">${esc(pct)}</td>
+        <td data-label="${esc(t("common.size"))}">${esc(it.size_h)}</td>
+        <td data-label="${esc(t("explorer.col_modified"))}">${esc(it.mtime || "—")}</td>
+        <td data-label="${esc(t("explorer.col_accessed"))}">${esc(it.atime || "—")}</td>
+        <td data-label="${esc(t("explorer.col_files"))}">${esc(fmtNum(it.files))}</td>
+        <td data-label="${esc(t("explorer.col_folders"))}">${esc(fmtNum(it.dirs))}</td>
+        <td data-label="${esc(t("explorer.col_owner"))}">${esc(it.owner || "—")}</td>
+        <td data-label="${esc(t("explorer.col_group"))}">${esc(it.group || "—")}</td>
+        <td data-label="${esc(t("explorer.col_type"))}">${esc(typeLabel)}</td>
       </tr>`;
     }).join("");
 
@@ -333,12 +343,12 @@ async function loadChildrenTable(path) {
     renderPager(pagerEl, {
       page: tblPage, totalPages,
       onPage: p => { tblPage = p; loadChildrenTable(currentPath); },
-      info: `${fmt(total)} resultados · página ${tblPage + 1} de ${totalPages}`,
+      info: t("common.pager_info", { n: fmtNum(total), page: tblPage + 1, total: totalPages }),
     });
 
   } catch (e) {
     console.error(e);
-    scrollEl.innerHTML = `<p class="error">No se pudo cargar la tabla de elementos.</p>`;
+    scrollEl.innerHTML = `<p class="error">${t("explorer.table_error")}</p>`;
     pagerEl.innerHTML = "";
   }
 }
@@ -362,13 +372,13 @@ async function selectFolder(path) {
   // Fetch tree data for this path (also provides current stats + children)
   let treeData;
   try {
-    if (statsEl) statsEl.innerHTML = `<span class="muted">Cargando…</span>`;
+    if (statsEl) statsEl.innerHTML = `<span class="muted">${t("common.loading")}</span>`;
     treeData = await get("/api/tree", { path });
     // Cache children
     treeCache.set(path, treeData.children ?? []);
   } catch (e) {
     console.error(e);
-    if (statsEl) statsEl.innerHTML = `<span class="error">No se pudo cargar.</span>`;
+    if (statsEl) statsEl.innerHTML = `<span class="error">${t("explorer.stats_error")}</span>`;
     return;
   }
 
@@ -377,10 +387,13 @@ async function selectFolder(path) {
     const c = treeData.current;
     if (c) {
       tblParentSize = c.size || 0;
-      statsEl.innerHTML =
-        `<span class="muted">${esc(c.size_h)} · ${esc(fmt(c.items))} items · ` +
-        `${esc(fmt(c.files))} archivos · ${esc(fmt(c.dirs))} carpetas · ` +
-        `modif. ${esc(c.mtime)}</span>`;
+      statsEl.innerHTML = `<span class="muted">${t("explorer.stats", {
+        size: esc(c.size_h),
+        items: esc(fmtNum(c.items)),
+        files: esc(fmtNum(c.files)),
+        dirs: esc(fmtNum(c.dirs)),
+        mtime: esc(c.mtime),
+      })}</span>`;
     } else {
       // Root: no current; use sum of direct children sizes for %
       tblParentSize = (treeData.children ?? []).reduce((acc, ch) => acc + (ch.size || 0), 0);
@@ -407,19 +420,19 @@ export async function init() {
   const el = rootEl();
 
   el.innerHTML =
-    `<button id="btn-tree" class="btn ghost">☰ Árbol</button>
+    `<button id="btn-tree" class="btn ghost">${t("explorer.tree_btn")}</button>
      <div class="explorer-grid">
 
        <!-- LEFT: tree drawer -->
        <aside class="tree-drawer panel">
-         <h2>Carpetas</h2>
+         <h2>${t("explorer.folders_heading")}</h2>
          <div class="scroll">
            <ul class="tree" id="ex-tree-root"></ul>
          </div>
        </aside>
 
        <!-- Divisor arrastrable (solo escritorio) -->
-       <div class="tree-resizer" id="ex-resizer" title="Arrastra para redimensionar"></div>
+       <div class="tree-resizer" id="ex-resizer" title="${esc(t("explorer.resize_title"))}"></div>
 
        <!-- RIGHT: detail pane -->
        <div class="ex-detail panel">
@@ -433,12 +446,12 @@ export async function init() {
          <!-- Section 2: Chart panel -->
          <div class="ex-chart-panel panel">
            <div class="ex-chart-toolbar">
-             <h2>Estadísticas</h2>
+             <h2>${t("explorer.stats_heading")}</h2>
              <select id="ex-chart">
-               <option value="types">Top tipos de archivo</option>
-               <option value="dirs">Top carpetas</option>
-               <option value="agem">Antigüedad (modificado)</option>
-               <option value="agea">Antigüedad (accedido)</option>
+               <option value="types">${t("explorer.opt_types")}</option>
+               <option value="dirs">${t("explorer.opt_dirs")}</option>
+               <option value="agem">${t("explorer.opt_age_mtime")}</option>
+               <option value="agea">${t("explorer.opt_age_atime")}</option>
              </select>
            </div>
            <div id="ex-chart-area" class="ex-chart-area"></div>
@@ -446,7 +459,7 @@ export async function init() {
 
          <!-- Section 3: Subfolders table -->
          <div class="ex-subfolders-panel panel">
-           <h2>Subcarpetas</h2>
+           <h2>${t("explorer.subfolders_heading")}</h2>
            <div class="scroll" id="ex-subfolders"></div>
          </div>
 
@@ -474,7 +487,7 @@ export async function init() {
 
   // Bootstrap tree: nodo raíz "data" clicable + su primer nivel expandido
   const treeRoot = el.querySelector("#ex-tree-root");
-  treeRoot.innerHTML = `<li class="muted">Cargando…</li>`;
+  treeRoot.innerHTML = `<li class="muted">${t("common.loading")}</li>`;
   try {
     const [rootData, space] = await Promise.all([
       get("/api/tree", { path: ROOT }),
@@ -488,7 +501,7 @@ export async function init() {
     treeRoot.innerHTML =
       `<li class="tree-node expanded sel" data-path="${esc(ROOT)}">
         <div class="tree-row">
-          <span class="tree-caret" title="Contraer">▾</span>
+          <span class="tree-caret" title="${esc(t("explorer.collapse"))}">▾</span>
           <span class="tree-name" data-path="${esc(ROOT)}">data</span>
           <span class="tree-size muted">${rootLabel}</span>
           <div class="tree-bar-wrap"><div class="bar tree-bar" style="width:${esc(occupiedPct)}%"></div></div>
@@ -500,7 +513,7 @@ export async function init() {
     if (rootChildrenUl) bindTreeEvents(rootChildrenUl); // vincula los hijos
   } catch (e) {
     console.error(e);
-    treeRoot.innerHTML = `<li class="error">No se pudo cargar el árbol.</li>`;
+    treeRoot.innerHTML = `<li class="error">${t("explorer.tree_error")}</li>`;
   }
 
   // Load initial folder (root)
@@ -525,7 +538,9 @@ function setupResizer(el) {
   rez.addEventListener("pointermove", e => {
     if (!dragging) return;
     const rect = grid.getBoundingClientRect();
-    const w = Math.max(180, Math.min(600, e.clientX - rect.left));
+    const rtl = document.documentElement.dir === "rtl";
+    const delta = rtl ? (rect.right - e.clientX) : (e.clientX - rect.left);
+    const w = Math.max(180, Math.min(600, delta));
     grid.style.setProperty("--tree-w", w + "px");
   });
   const end = () => {

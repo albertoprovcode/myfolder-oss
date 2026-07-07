@@ -5,25 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>myfolder</title>
   <link rel="icon" type="image/svg+xml" href="static/img/myfolder.svg">
-  <link rel="stylesheet" href="static/css/style.css?v=2026-07-02-7">
+  <link rel="stylesheet" href="static/css/style.css?v=2026-07-06-3">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <h1 class="logo" style="display:flex;align-items:center;gap:.4rem"><img src="static/img/myfolder.svg" alt="" height="28"><span>myfolder</span></h1>
       <nav class="topnav">
-        <button class="navbtn active" data-view="dashboard">📊<span>Resumen</span></button>
-        <button class="navbtn" data-view="explorer">🗂️<span>Explorador</span></button>
-        <button class="navbtn" data-view="search">🔎<span>Buscar</span></button>
-        <button class="navbtn" data-view="map">🗺️<span>Mapa</span></button>
-        <button class="navbtn" data-view="recoverable">♻️<span>Recuperable</span></button>
-        <button class="navbtn" data-view="owners">👤<span>Dueños</span></button>
+        <button class="navbtn active" data-view="dashboard">📊<span data-i18n="nav.dashboard">Resumen</span></button>
+        <button class="navbtn" data-view="explorer">🗂️<span data-i18n="nav.explorer">Explorador</span></button>
+        <button class="navbtn" data-view="search">🔎<span data-i18n="nav.search">Buscar</span></button>
+        <button class="navbtn" data-view="map">🗺️<span data-i18n="nav.map">Mapa</span></button>
+        <button class="navbtn" data-view="recoverable">♻️<span data-i18n="nav.recoverable">Recuperable</span></button>
+        <button class="navbtn" data-view="owners">👤<span data-i18n="nav.owners">Dueños</span></button>
       </nav>
       <form id="global-search" class="global-search">
-        <input id="q" type="search" placeholder="Buscar en todo el NAS…" autocomplete="off">
+        <input id="q" type="search" data-i18n-attr="placeholder:header.global_search_ph" placeholder="Buscar en todo el NAS…" autocomplete="off">
       </form>
       <span id="indexed-at" class="muted"></span>
-      <button id="btn-reindex" class="navbtn" title="Vuelve a recorrer el NAS y actualiza todas las cifras">⟳ Reindexar</button>
+      <button id="btn-reindex" class="navbtn" data-i18n-attr="title:header.reindex_title" data-i18n="header.reindex" title="Vuelve a recorrer el NAS y actualiza todas las cifras">⟳ Reindexar</button>
+      <div id="lang-select" class="lang-select"></div>
     </header>
 
     <main>

@@ -1,5 +1,6 @@
 import { get, esc } from "./api.js";
 import { treemap } from "./charts.js";
+import { fmtNum, t } from "./i18n.js";
 
 const ROOT = "/data";
 let currentPath = ROOT;
@@ -22,23 +23,23 @@ async function loadMap(path) {
   el.querySelector("#map-crumbs").innerHTML = crumbsHtml(path);
   const chartEl = el.querySelector("#map-chart");
   const info = el.querySelector("#map-info");
-  info.textContent = "Cargando…";
+  info.textContent = t("common.loading");
   try {
     const data = await get("/api/tree", { path });
     const children = data.children ?? [];
     const c = data.current;
     info.textContent = c
-      ? `${c.size_h} · ${new Intl.NumberFormat("es-ES").format(c.items)} items`
+      ? t("map.items", { size: c.size_h, n: fmtNum(c.items) })
       : "";
     if (!children.length) {
-      chartEl.innerHTML = `<p class="muted">Esta carpeta no tiene subcarpetas.</p>`;
+      chartEl.innerHTML = `<p class="muted">${t("map.empty")}</p>`;
       return;
     }
     chartEl.innerHTML = ""; // limpiar antes de montar
     treemap(chartEl, children, (p) => { if (p) loadMap(p); });
   } catch (e) {
     console.error(e);
-    chartEl.innerHTML = `<p class="error">No se pudo cargar el mapa.</p>`;
+    chartEl.innerHTML = `<p class="error">${t("map.error")}</p>`;
   }
 }
 

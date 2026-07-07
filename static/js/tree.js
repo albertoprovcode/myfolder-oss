@@ -1,4 +1,5 @@
 import { get, esc } from "./api.js";
+import { t } from "./i18n.js";
 
 const ROOT = "/data";
 
@@ -25,7 +26,7 @@ export function mountTree(container, { onSelect } = {}) {
       const barW = Math.round((ch.size / max) * 100);
       return `<li class="tree-node" data-path="${esc(ch.path)}">
         <div class="tree-row">
-          <span class="tree-caret" title="Expandir">▸</span>
+          <span class="tree-caret" title="${esc(t("explorer.expand"))}">▸</span>
           <span class="tree-name" data-path="${esc(ch.path)}">${esc(ch.name)}</span>
           <span class="tree-size muted">${esc(ch.size_h)}</span>
           <div class="tree-bar-wrap"><div class="bar tree-bar" style="width:${esc(barW)}%"></div></div>
@@ -101,13 +102,13 @@ export function mountTree(container, { onSelect } = {}) {
   }
 
   (async function initRoot() {
-    container.innerHTML = `<li class="muted">Cargando…</li>`;
+    container.innerHTML = `<li class="muted">${t("common.loading")}</li>`;
     try {
       const children = await fetchChildren(ROOT);
       container.innerHTML =
         `<li class="tree-node expanded sel" data-path="${esc(ROOT)}">
           <div class="tree-row">
-            <span class="tree-caret" title="Contraer">▾</span>
+            <span class="tree-caret" title="${esc(t("explorer.collapse"))}">▾</span>
             <span class="tree-name" data-path="${esc(ROOT)}">data</span>
           </div>
           <ul class="tree tree-children" data-loaded="true">${buildChildrenHtml(children)}</ul>
@@ -117,7 +118,7 @@ export function mountTree(container, { onSelect } = {}) {
       if (rootChildrenUl) bindTreeEvents(rootChildrenUl);
     } catch (e) {
       console.error(e);
-      container.innerHTML = `<li class="error">No se pudo cargar el árbol.</li>`;
+      container.innerHTML = `<li class="error">${t("explorer.tree_error")}</li>`;
     }
   })();
 
